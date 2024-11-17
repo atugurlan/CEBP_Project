@@ -31,6 +31,7 @@ public class ClientApiServer {
         server.setExecutor(null);
         server.start();
         System.out.println("Server started on port 8081");
+        ClientManager.addClient(client);
     }
 
     static class CreateClientHandler implements HttpHandler {

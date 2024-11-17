@@ -34,6 +34,7 @@ public class Client {
             Offer newOffer = new Offer(this.id, stockName, noOfStocks, pricePerStock, offerType);
             offerHistory.add(newOffer);
             System.out.println(this.id);
+            System.out.println(newOffer);
 
             Matcher.addOffer(newOffer);
             Matcher.matchOffer(newOffer);

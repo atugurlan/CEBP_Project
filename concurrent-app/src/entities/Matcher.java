@@ -70,7 +70,10 @@ public class Matcher {
                         Offer buyingOffer = (offer.getOfferType() == OfferType.BUY) ? offer : matchedOffer;
                         Offer sellingOffer = (offer.getOfferType() == OfferType.SELL) ? offer : matchedOffer;
 
-                        createTransaction(buyingOffer, sellingOffer, tradedNumberOfStocks);
+                        if (buyingOffer.getClientID() != sellingOffer.getClientID()) {
+                            createTransaction(buyingOffer, sellingOffer, tradedNumberOfStocks);
+                        }
+
                     } finally {
                         matchedOffer.matcherLock.unlock();
                     }
@@ -101,6 +104,7 @@ public class Matcher {
         Client sellingClient = ClientManager.findClientByID(sellerID);
         sellingClient.addTransaction(transaction);
         sellingClient.updateSellerWallet(offerStockType, noOfTradedStocks, transactionPrice);
+        System.out.println(transaction.toString());
     }
 
     public static void removeOffer(Offer offer) {
