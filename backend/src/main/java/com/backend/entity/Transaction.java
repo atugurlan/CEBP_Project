@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name="selling_client_id", nullable = false)
@@ -32,11 +32,8 @@ public class Transaction {
     @JoinColumn(name="buying_offer_id", nullable = false)
     private Offer buyingOffer;
 
-    @ManyToOne
-    @JoinColumn(name="stock_id", nullable = false)
-    private Stock tradedStock;
-
-    private int noOfTradedStocks;
-    private int pricePerStock;
-    private int totalPrice;
+    private StockType tradedStockType;
+    private Integer noOfTradedStocks;
+    private Integer pricePerStock;
+    private Integer totalPrice;
 }

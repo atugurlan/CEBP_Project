@@ -15,10 +15,14 @@ public class Client {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     private String name;
     private String email;
     private String password;
-    private String moneyWallet;
+
+    private Integer moneyWallet;
+
+    @OneToOne(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
+    private StockWallet stockWallet;
 }

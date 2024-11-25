@@ -14,19 +14,21 @@ import lombok.NoArgsConstructor;
 public class Offer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @ManyToOne
-    @JoinColumn(name="client_id", nullable = false)
+    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
-    @ManyToOne
-    @JoinColumn(name="stock_id", nullable = false)
-    private Stock stock;
+    private StockType stockType;
+    private Integer noOfStocks;
+    private Integer noOfStocksLeft;
+    private Integer pricePerStock;
 
-    private int noOfStocks;
-    private int noOfStocksLeft;
-    private int pricePerStock;
+    @Enumerated(EnumType.STRING)
     private OfferType offerType;
-    private OfferStatus offerStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OfferStatus offerStatus = OfferStatus.PENDING; // Default value set to PENDING
 }

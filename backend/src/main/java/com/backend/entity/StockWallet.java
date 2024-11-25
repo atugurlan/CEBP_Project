@@ -15,13 +15,12 @@ public class StockWallet {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    @ManyToOne
-    @JoinColumn(name = "stock_id", nullable = false)
-    private Stock stock;
+    private Integer id;
 
     @OneToOne
-    @JoinColumn(name="client_id", nullable = false)
+    @JoinColumn(name = "client_id", nullable = false)
     private Client client;
+
+    private StockType stockType;
+    private Integer quantity;
 }
