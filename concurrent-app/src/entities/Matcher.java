@@ -135,9 +135,8 @@ public class Matcher {
         ArrayList<Offer> offers = existingOffersByPrice.get(price);
 
 //        System.out.println(offers);
+
         offers.remove(offer);
-//        System.out.println(offers);
         offers.add(offer);
-//        System.out.println(offers);
     }
 }
