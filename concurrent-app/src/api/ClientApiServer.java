@@ -11,6 +11,8 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.io.*;
+import java.util.*;
 
 public class ClientApiServer {
     private static Map<StockType, Integer> stockWallet1 = new HashMap<>() {{
@@ -18,7 +20,7 @@ public class ClientApiServer {
         put(StockType.GOOGLE, 20);
     }};
 
-    private static Client client = new Client("Client69", 10000, stockWallet1); // Sample client object
+    private static Client client = new Client("Client99", 10000, stockWallet1); // Sample client object
 
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8081), 0);
@@ -85,24 +87,94 @@ public class ClientApiServer {
         }
     }
 
+//    static class PostOfferHandler implements HttpHandler {
+//        @Override
+//        public void handle(HttpExchange exchange) throws IOException {
+//            if ("POST".equals(exchange.getRequestMethod())) {
+//                try {
+//                    Map<String, String> params = queryToMap(exchange.getRequestURI().getQuery());
+//                    StockType stockName = StockType.valueOf(params.get("stockName"));
+//                    int noOfStocks = Integer.parseInt(params.get("noOfStocks"));
+//                    int pricePerStock = Integer.parseInt(params.get("pricePerStock"));
+//                    OfferType offerType = OfferType.valueOf(params.get("offerType"));
+//
+//                    System.out.println("StockType: " + stockName);
+//                    System.out.println("Number of Stocks: " + noOfStocks);
+//                    System.out.println("Price per Stock: " + pricePerStock);
+//                    System.out.println("OfferType: " + offerType);
+//
+//                    int statusCode = client.postOffer(stockName, noOfStocks, pricePerStock, offerType);
+//
+//                    String response;
+//                    int httpStatus;
+//
+//                    if (statusCode == 0) {
+//                        response = "Offer posted successfully.";
+//                        httpStatus = 200;
+//                    } else {
+//                        response = "Failed to create offer. Check parameters and try again.";
+//                        httpStatus = 400;
+//                    }
+//
+//                    exchange.sendResponseHeaders(httpStatus, response.length());
+//                    try (OutputStream os = exchange.getResponseBody()) {
+//                        os.write(response.getBytes());
+//                    }
+//                } catch (Exception e) {
+//                    String response = "An error occurred: " + e.getMessage();
+//                    exchange.sendResponseHeaders(500, response.length());
+//                    try (OutputStream os = exchange.getResponseBody()) {
+//                        os.write(response.getBytes());
+//                    }
+//                }
+//            } else {
+//                String response = "Method not allowed";
+//                exchange.sendResponseHeaders(405, response.length());
+//                try (OutputStream os = exchange.getResponseBody()) {
+//                    os.write(response.getBytes());
+//                }
+//            }
+//        }
+//    }
+
     static class PostOfferHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("POST".equals(exchange.getRequestMethod())) {
                 try {
-                    Map<String, String> params = queryToMap(exchange.getRequestURI().getQuery());
-                    StockType stockName = StockType.valueOf(params.get("stockName"));
-                    int noOfStocks = Integer.parseInt(params.get("noOfStocks"));
-                    int pricePerStock = Integer.parseInt(params.get("pricePerStock"));
-                    OfferType offerType = OfferType.valueOf(params.get("offerType"));
+                    // Read the request body
+                    InputStream inputStream = exchange.getRequestBody();
+                    StringBuilder requestBody = new StringBuilder();
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            requestBody.append(line);
+                        }
+                    }
+
+                    // Convert request body to a String
+                    String jsonString = requestBody.toString();
+
+                    // Manually parse JSON string (requires strict formatting)
+                    Map<String, String> bodyParams = parseJson(jsonString);
+
+                    // Extract and parse parameters
+                    StockType stockName = StockType.valueOf(bodyParams.get("stockName"));
+                    int noOfStocks = Integer.parseInt(bodyParams.get("noOfStocks"));
+                    int pricePerStock = Integer.parseInt(bodyParams.get("pricePerStock"));
+                    OfferType offerType = OfferType.valueOf(bodyParams.get("offerType"));
 
                     System.out.println("StockType: " + stockName);
                     System.out.println("Number of Stocks: " + noOfStocks);
                     System.out.println("Price per Stock: " + pricePerStock);
                     System.out.println("OfferType: " + offerType);
 
+
+                    // create the client with the data from request body
+                    // Call client.postOffer with parsed data
                     int statusCode = client.postOffer(stockName, noOfStocks, pricePerStock, offerType);
 
+                    // Prepare response based on client.postOffer result
                     String response;
                     int httpStatus;
 
@@ -114,11 +186,13 @@ public class ClientApiServer {
                         httpStatus = 400;
                     }
 
+                    // Send the response
                     exchange.sendResponseHeaders(httpStatus, response.length());
                     try (OutputStream os = exchange.getResponseBody()) {
                         os.write(response.getBytes());
                     }
                 } catch (Exception e) {
+                    // Handle exceptions
                     String response = "An error occurred: " + e.getMessage();
                     exchange.sendResponseHeaders(500, response.length());
                     try (OutputStream os = exchange.getResponseBody()) {
@@ -126,12 +200,25 @@ public class ClientApiServer {
                     }
                 }
             } else {
+                // Handle unsupported methods
                 String response = "Method not allowed";
                 exchange.sendResponseHeaders(405, response.length());
                 try (OutputStream os = exchange.getResponseBody()) {
                     os.write(response.getBytes());
                 }
             }
+        }
+
+        // Simple JSON parser (handles flat JSON structures)
+        private Map<String, String> parseJson(String jsonString) {
+            Map<String, String> result = new HashMap<>();
+            jsonString = jsonString.trim().replaceAll("[{}\"]", ""); // Remove braces and quotes
+            String[] pairs = jsonString.split(",");
+            for (String pair : pairs) {
+                String[] keyValue = pair.split(":");
+                result.put(keyValue[0].trim(), keyValue[1].trim());
+            }
+            return result;
         }
     }
 
