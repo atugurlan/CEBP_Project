@@ -29,22 +29,16 @@ public class Client {
         this.stockWallet = stockWallet;
     }
 
-    public int postOffer(StockType stockName, int noOfStocks, int pricePerStock, OfferType offerType) {
-        if(checkOffer(stockName, noOfStocks, pricePerStock, offerType)) {
-            Offer newOffer = new Offer(this.id, stockName, noOfStocks, pricePerStock, offerType);
-            offerHistory.add(newOffer);
-            System.out.println(this.id);
-            System.out.println(newOffer);
+    public int postOffer(int clientID, StockType stockName, int noOfStocks, int pricePerStock, OfferType offerType) {
+        Offer newOffer = new Offer(clientID, stockName, noOfStocks, pricePerStock, offerType);
+        offerHistory.add(newOffer);
+        System.out.println(clientID);
+        System.out.println(newOffer);
 
-            Matcher.addOffer(newOffer);
-            Matcher.matchOffer(newOffer);
+        Matcher.addOffer(newOffer);
+        Matcher.matchOffer(newOffer);
 
-            return 0;
-        }
-        else {
-            System.out.println("The offer was not created.\n");
-            return 1;
-        }
+        return 0;
     }
 
     public int deleteOffer(int offerID) {

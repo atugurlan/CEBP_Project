@@ -159,6 +159,7 @@ public class ClientApiServer {
                     Map<String, String> bodyParams = parseJson(jsonString);
 
                     // Extract and parse parameters
+                    int clientID = Integer.parseInt(bodyParams.get("client"));
                     StockType stockName = StockType.valueOf(bodyParams.get("stockName"));
                     int noOfStocks = Integer.parseInt(bodyParams.get("noOfStocks"));
                     int pricePerStock = Integer.parseInt(bodyParams.get("pricePerStock"));
@@ -172,7 +173,7 @@ public class ClientApiServer {
 
                     // create the client with the data from request body
                     // Call client.postOffer with parsed data
-                    int statusCode = client.postOffer(stockName, noOfStocks, pricePerStock, offerType);
+                    int statusCode = client.postOffer(clientID, stockName, noOfStocks, pricePerStock, offerType);
 
                     // Prepare response based on client.postOffer result
                     String response;
