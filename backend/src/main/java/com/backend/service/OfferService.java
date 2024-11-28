@@ -62,7 +62,7 @@ public class OfferService {
         }
     }
 
-    private void validateOffer(Offer offer) {
+    public int validateOffer(Offer offer) {
         Client client = clientRepository.findOneById(offer.getClient().getId());
         System.out.println(client);
         StockWallet stockWallet = stockWalletService.getStockWalletByClientIdAndStockType(offer.getClient().getId(), offer.getStockType());
@@ -71,15 +71,19 @@ public class OfferService {
             // Ensure client has enough stocks to sell
             if (stockWallet == null || stockWallet.getStockType() != offer.getStockType()
                     || stockWallet.getQuantity() < offer.getNoOfStocks()) {
-                throw new IllegalArgumentException("Client does not have enough stocks to sell.");
+                // throw new IllegalArgumentException("Client does not have enough stocks to sell.");
+                return 1;
             }
         } else if (offer.getOfferType() == OfferType.BUY) {
             // Ensure client has enough money to buy
             int totalCost = offer.getNoOfStocks() * offer.getPricePerStock();
             if (client.getMoneyWallet() < totalCost) {
-                throw new IllegalArgumentException("Client does not have enough money to buy.");
+                // throw new IllegalArgumentException("Client does not have enough money to buy.");
+                return 2;
             }
         }
+
+        return 0;
     }
 
     @Transactional
