@@ -15,12 +15,6 @@ import java.io.*;
 import java.util.*;
 
 public class ClientApiServer {
-    private static Map<StockType, Integer> stockWallet1 = new HashMap<>() {{
-        put(StockType.APPLE, 10);
-        put(StockType.GOOGLE, 20);
-    }};
-
-    private static Client client = new Client("Client99", 10000, stockWallet1); // Sample client object
 
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8081), 0);
@@ -33,7 +27,6 @@ public class ClientApiServer {
         server.setExecutor(null);
         server.start();
         System.out.println("Server started on port 8081");
-        ClientManager.addClient(client);
     }
 
     static class CreateClientHandler implements HttpHandler {
@@ -160,7 +153,7 @@ public class ClientApiServer {
 
                     // Extract and parse parameters
                     int clientID = Integer.parseInt(bodyParams.get("client"));
-                    StockType stockName = StockType.valueOf(bodyParams.get("stockName"));
+                    StockType stockName = StockType.valueOf(bodyParams.get("stockType"));
                     int noOfStocks = Integer.parseInt(bodyParams.get("noOfStocks"));
                     int pricePerStock = Integer.parseInt(bodyParams.get("pricePerStock"));
                     OfferType offerType = OfferType.valueOf(bodyParams.get("offerType"));
@@ -173,7 +166,7 @@ public class ClientApiServer {
 
                     // create the client with the data from request body
                     // Call client.postOffer with parsed data
-                    int statusCode = client.postOffer(clientID, stockName, noOfStocks, pricePerStock, offerType);
+                    int statusCode = Client.postOffer(clientID, stockName, noOfStocks, pricePerStock, offerType);
 
                     // Prepare response based on client.postOffer result
                     String response;
@@ -231,7 +224,7 @@ public class ClientApiServer {
                     Map<String, String> params = queryToMap(exchange.getRequestURI().getQuery());
                     int offerID = Integer.parseInt(params.get("offerID"));
 
-                    int statusCode = client.deleteOffer(offerID);
+                    int statusCode = Client.deleteOffer(offerID);
                     String response;
                     int httpStatus;
 
@@ -276,7 +269,7 @@ public class ClientApiServer {
                     int offerID = Integer.parseInt(params.get("offerID"));
                     int noOfStocks = Integer.parseInt(params.get("noOfStocks"));
 
-                    int statusCode = client.modifyOfferByStocks(offerID, noOfStocks);
+                    int statusCode = Client.modifyOfferByStocks(offerID, noOfStocks);
                     String response;
                     int httpStatus;
 
@@ -327,7 +320,7 @@ public class ClientApiServer {
                     int offerID = Integer.parseInt(params.get("offerID"));
                     int priceOfStock = Integer.parseInt(params.get("priceOfStock"));
 
-                    int statusCode = client.modifyOfferByPrice(offerID, priceOfStock);
+                    int statusCode = Client.modifyOfferByPrice(offerID, priceOfStock);
                     String response;
                     int httpStatus;
 
@@ -379,7 +372,7 @@ public class ClientApiServer {
                     int noOfStocks = Integer.parseInt(params.get("noOfStocks"));
                     int priceOfStock = Integer.parseInt(params.get("priceOfStock"));
 
-                    int statusCode = client.modifyOfferByStocksAndPrice(offerID, noOfStocks, priceOfStock);
+                    int statusCode = Client.modifyOfferByStocksAndPrice(offerID, noOfStocks, priceOfStock);
                     String response;
                     int httpStatus;
 
