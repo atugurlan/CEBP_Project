@@ -1,5 +1,7 @@
 package com.backend.entity;
 
+import com.backend.serializer.ClientDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,11 +20,11 @@ public class Offer {
 
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
+    @JsonDeserialize(using = ClientDeserializer.class)
     private Client client;
 
     private StockType stockType;
     private Integer noOfStocks;
-    private Integer noOfStocksLeft;
     private Integer pricePerStock;
 
     @Enumerated(EnumType.STRING)

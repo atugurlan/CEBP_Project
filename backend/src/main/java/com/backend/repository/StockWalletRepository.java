@@ -11,6 +11,8 @@ import java.util.List;
 @Repository
 public interface StockWalletRepository extends JpaRepository<StockWallet, Integer> {
     StockWallet findOneById(Integer id);
-    List<StockWallet> findOneByStockType(StockType stockType);
+    StockWallet findOneByStockType(StockType stockType);
     StockWallet findOneByClientId(Integer clientId);
+    List<StockWallet> findAllByClientId(Integer clientId);
+    StockWallet findOneByClientIdAndStockType(Integer clientId, StockType stockType);
 }

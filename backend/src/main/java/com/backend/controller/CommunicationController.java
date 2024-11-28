@@ -26,11 +26,15 @@ public class CommunicationController {
 
     @PostMapping("/redirect")
     public ResponseEntity<String> redirectPostRequest(@RequestBody String requestBody) {
+        // validate offer
         String targetUrl = "http://localhost:8081/postOffer";
-
-
+        /// offer is good
+        ///
         ResponseEntity<String> response = restTemplate.postForEntity(targetUrl, requestBody, String.class);
         return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        ///
+        /// else
+        /// return response containing error (not enough stocks/ not enough money depending on offer type)
     }
 
 }

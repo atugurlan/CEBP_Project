@@ -1,6 +1,7 @@
 package com.backend.service;
 
 import com.backend.entity.*;
+import com.backend.repository.ClientRepository;
 import com.backend.repository.OfferRepository;
 import com.backend.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
@@ -11,15 +12,17 @@ import java.util.List;
 @Service
 public class OfferService {
 
+    private final ClientRepository clientRepository;
     private final OfferRepository offerRepository;
     private final TransactionRepository transactionRepository;
     private final StockWalletService stockWalletService;
     private final ClientService clientService;
 
-    public OfferService(OfferRepository offerRepository,
+    public OfferService(ClientRepository clientRepository, OfferRepository offerRepository,
                         TransactionRepository transactionRepository,
                         StockWalletService stockWalletService,
                         ClientService clientService) {
+        this.clientRepository = clientRepository;
         this.offerRepository = offerRepository;
         this.transactionRepository = transactionRepository;
         this.stockWalletService = stockWalletService;
@@ -36,6 +39,7 @@ public class OfferService {
 
     @Transactional
     public Offer saveOffer(Offer offer) {
+        System.out.println();
         validateOffer(offer); // Check client's resources before saving
 
         if (offer.getOfferStatus() == null) {
@@ -59,8 +63,9 @@ public class OfferService {
     }
 
     private void validateOffer(Offer offer) {
-        Client client = offer.getClient();
-        StockWallet stockWallet = stockWalletService.getStockWalletByClientId(client.getId());
+        Client client = clientRepository.findOneById(offer.getClient().getId());
+        System.out.println(client);
+        StockWallet stockWallet = stockWalletService.getStockWalletByClientIdAndStockType(offer.getClient().getId(), offer.getStockType());
 
         if (offer.getOfferType() == OfferType.SELL) {
             // Ensure client has enough stocks to sell
@@ -88,20 +93,20 @@ public class OfferService {
                     && newOffer.getPricePerStock().equals(match.getPricePerStock())) {
 
                 // Determine the number of stocks to trade
-                int tradedStocks = Math.min(newOffer.getNoOfStocksLeft(), match.getNoOfStocksLeft());
+                int tradedStocks = Math.min(newOffer.getNoOfStocks(), match.getNoOfStocks());
                 if (tradedStocks > 0) {
                     // Perform the transaction
                     performTransaction(newOffer, match, tradedStocks);
 
                     // Update the number of stocks left in the offers
-                    newOffer.setNoOfStocksLeft(newOffer.getNoOfStocksLeft() - tradedStocks);
-                    match.setNoOfStocksLeft(match.getNoOfStocksLeft() - tradedStocks);
+                    newOffer.setNoOfStocks(newOffer.getNoOfStocks() - tradedStocks);
+                    match.setNoOfStocks(match.getNoOfStocks() - tradedStocks);
 
                     // Mark offers as completed if fully fulfilled
-                    if (newOffer.getNoOfStocksLeft() == 0) {
+                    if (newOffer.getNoOfStocks() == 0) {
                         newOffer.setOfferStatus(OfferStatus.COMPLETED);
                     }
-                    if (match.getNoOfStocksLeft() == 0) {
+                    if (match.getNoOfStocks() == 0) {
                         match.setOfferStatus(OfferStatus.COMPLETED);
                     }
 
@@ -133,8 +138,8 @@ public class OfferService {
         transactionRepository.save(transaction);
 
         // Update money wallets
-        Client sellingClient = transaction.getSellingClient();
-        Client buyingClient = transaction.getBuyingClient();
+        Client sellingClient = clientRepository.findOneById(transaction.getSellingClient().getId());
+        Client buyingClient = clientRepository.findOneById(transaction.getBuyingClient().getId());
         int totalPrice = transaction.getTotalPrice();
 
         clientService.updateMoneyWallet(sellingClient.getId(), sellingClient.getMoneyWallet() + totalPrice);

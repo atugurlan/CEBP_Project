@@ -29,17 +29,6 @@ public class StockWalletController {
         return stockWallet != null ? ResponseEntity.ok(stockWallet) : ResponseEntity.notFound().build();
     }
 
-    @GetMapping("/stockType/{stockType}")
-    public ResponseEntity<List<StockWallet>> getStockWalletsByStockType(@PathVariable StockType stockType) {
-        return ResponseEntity.ok(stockWalletService.getStockWalletsByStockType(stockType));
-    }
-
-    @GetMapping("/client/{clientId}")
-    public ResponseEntity<StockWallet> getStockWalletByClientId(@PathVariable Integer clientId) {
-        StockWallet stockWallet = stockWalletService.getStockWalletByClientId(clientId);
-        return stockWallet != null ? ResponseEntity.ok(stockWallet) : ResponseEntity.notFound().build();
-    }
-
     @PostMapping
     public ResponseEntity<StockWallet> createStockWallet(@RequestBody StockWallet stockWallet) {
         StockWallet savedStockWallet = stockWalletService.saveStockWallet(stockWallet);

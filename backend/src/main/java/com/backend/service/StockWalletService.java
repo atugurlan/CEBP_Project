@@ -1,7 +1,9 @@
 package com.backend.service;
 
+import com.backend.entity.Client;
 import com.backend.entity.StockType;
 import com.backend.entity.StockWallet;
+import com.backend.repository.ClientRepository;
 import com.backend.repository.StockWalletRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,9 +14,11 @@ import java.util.List;
 public class StockWalletService {
 
     private final StockWalletRepository stockWalletRepository;
+    private final ClientRepository clientRepository;
 
-    public StockWalletService(StockWalletRepository stockWalletRepository) {
+    public StockWalletService(StockWalletRepository stockWalletRepository, ClientRepository clientRepository) {
         this.stockWalletRepository = stockWalletRepository;
+        this.clientRepository = clientRepository;
     }
 
     public List<StockWallet> getAllStockWallets() {
@@ -25,12 +29,16 @@ public class StockWalletService {
         return stockWalletRepository.findById(id).orElse(null);
     }
 
-    public List<StockWallet> getStockWalletsByStockType(StockType stockType) {
+    public StockWallet getStockWalletsByStockType(StockType stockType) {
         return stockWalletRepository.findOneByStockType(stockType);
     }
 
-    public StockWallet getStockWalletByClientId(Integer clientId) {
-        return stockWalletRepository.findOneByClientId(clientId);
+    public List<StockWallet> getStockWalletByClientId(Integer clientId) {
+        return stockWalletRepository.findAllByClientId(clientId);
+    }
+
+    public StockWallet getStockWalletByClientIdAndStockType(Integer clientId, StockType stockType) {
+        return stockWalletRepository.findOneByClientIdAndStockType(clientId, stockType);
     }
 
     @Transactional
@@ -40,23 +48,22 @@ public class StockWalletService {
 
     @Transactional
     public void updateStockWallet(Integer clientId, StockType stockType, Integer quantityChange) {
-        StockWallet stockWallet = getStockWalletByClientId(clientId);
-        if (stockWallet == null) {
-            throw new IllegalArgumentException("Stock wallet not found for client ID: " + clientId);
+
+        StockWallet findStockWallet = stockWalletRepository.findOneByStockType(stockType);
+        Client client = clientRepository.findOneById(clientId);
+
+        if (findStockWallet != null) {
+            int newQuantity = findStockWallet.getQuantity() + quantityChange;
+            findStockWallet.setQuantity(newQuantity);
+        }
+        else {
+            findStockWallet = new StockWallet();
+            findStockWallet.setStockType(stockType);
+            findStockWallet.setQuantity(quantityChange);
+            findStockWallet.setClient(client);
         }
 
-        if (stockWallet.getStockType() != stockType) {
-            throw new IllegalArgumentException("Mismatch in stock type for client ID: " + clientId);
-        }
-
-        int newQuantity = stockWallet.getQuantity() + quantityChange;
-
-        if (newQuantity < 0) {
-            throw new IllegalArgumentException("Insufficient stocks in wallet for client ID: " + clientId);
-        }
-
-        stockWallet.setQuantity(newQuantity);
-        stockWalletRepository.save(stockWallet);
+        stockWalletRepository.save(findStockWallet);
     }
 
     @Transactional
