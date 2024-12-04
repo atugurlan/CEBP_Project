@@ -1,7 +1,10 @@
 package com.backend.controller;
 
+import com.backend.dto.LoginRequest;
+import com.backend.dto.RegisterClientRequest;
 import com.backend.entity.Client;
 import com.backend.service.ClientService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,7 +44,16 @@ public class ClientController {
     }
 
     @PostMapping
-    public ResponseEntity<Client> createClient(@RequestBody Client client) {
+    public ResponseEntity<Client> createClient(@Valid @RequestBody RegisterClientRequest registerRequest) {
+        // Map DTO to the Client entity
+        Client client = Client.builder()
+                .name(registerRequest.getName())
+                .email(registerRequest.getEmail())
+                .password(registerRequest.getPassword())
+                .moneyWallet(registerRequest.getMoneyWallet())
+                .build();
+
+        // Save the client
         Client savedClient = clientService.saveClient(client);
         return ResponseEntity.ok(savedClient);
     }
@@ -55,6 +67,16 @@ public class ClientController {
             return ResponseEntity.ok(updatedClient);
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest loginRequest) {
+        Client client = clientService.getClientByEmail(loginRequest.getEmail());
+        if (client != null && client.getPassword().equals(loginRequest.getPassword())) {
+            return ResponseEntity.ok("Login successful");
+        } else {
+            return ResponseEntity.status(401).body("Invalid email or password");
         }
     }
 
