@@ -1,8 +1,13 @@
 package com.backend.controller;
 
+import com.backend.dto.CreateStockWalletRequest;
+import com.backend.dto.StockWalletResponse;
+import com.backend.entity.Client;
 import com.backend.entity.StockWallet;
 import com.backend.entity.StockType;
+import com.backend.service.ClientService;
 import com.backend.service.StockWalletService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,9 +18,11 @@ import java.util.List;
 public class StockWalletController {
 
     private final StockWalletService stockWalletService;
+    private final ClientService clientService;
 
-    public StockWalletController(StockWalletService stockWalletService) {
+    public StockWalletController(StockWalletService stockWalletService, ClientService clientService) {
         this.stockWalletService = stockWalletService;
+        this.clientService = clientService;
     }
 
     @GetMapping
@@ -29,8 +36,42 @@ public class StockWalletController {
         return stockWallet != null ? ResponseEntity.ok(stockWallet) : ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/client/{clientId}")
+    public ResponseEntity<List<StockWalletResponse>> getStockWalletByClientId(@PathVariable Integer clientId) {
+        List<StockWallet> stockWallets = stockWalletService.getStockWalletByClientId(clientId);
+
+        // If no stock wallets are found, return an empty list
+        if (stockWallets == null || stockWallets.isEmpty()) {
+            return ResponseEntity.ok(List.of()); // Return an empty list
+        }
+
+        // Map StockWallet entities to StockWalletResponse DTOs
+        List<StockWalletResponse> responses = stockWallets.stream()
+                .map(wallet -> StockWalletResponse.builder()
+                        .stockType(wallet.getStockType())
+                        .quantity(wallet.getQuantity())
+                        .build())
+                .toList();
+
+        return ResponseEntity.ok(responses);
+    }
+
     @PostMapping
-    public ResponseEntity<StockWallet> createStockWallet(@RequestBody StockWallet stockWallet) {
+    public ResponseEntity<StockWallet> createStockWallet(@Valid @RequestBody CreateStockWalletRequest stockWalletRequest) {
+        // Fetch the client entity by ID
+        Client client = clientService.getClientById(stockWalletRequest.getClient());
+        if (client == null) {
+            return ResponseEntity.status(404).body(null); // Client not found
+        }
+
+        // Map the DTO to the StockWallet entity
+        StockWallet stockWallet = StockWallet.builder()
+                .client(client) // Use the managed Client entity
+                .stockType(stockWalletRequest.getStockType())
+                .quantity(stockWalletRequest.getQuantity())
+                .build();
+
+        // Save the StockWallet entity
         StockWallet savedStockWallet = stockWalletService.saveStockWallet(stockWallet);
         return ResponseEntity.ok(savedStockWallet);
     }

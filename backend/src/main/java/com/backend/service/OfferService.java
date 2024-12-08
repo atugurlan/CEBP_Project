@@ -1,5 +1,6 @@
 package com.backend.service;
 
+import com.backend.dto.OfferResponse;
 import com.backend.entity.*;
 import com.backend.repository.ClientRepository;
 import com.backend.repository.OfferRepository;
@@ -29,8 +30,21 @@ public class OfferService {
         this.clientService = clientService;
     }
 
-    public List<Offer> getAllOffers() {
-        return offerRepository.findAll();
+    public List<OfferResponse> getAllOffers() {
+        List<Offer> offers = offerRepository.findAll();
+
+        // Map each Offer entity to the OfferResponse DTO
+        return offers.stream()
+                .map(offer -> OfferResponse.builder()
+                        .id(offer.getId())
+                        .clientId(offer.getClient().getId()) // Add clientId
+                        .stockType(offer.getStockType())
+                        .noOfStocks(offer.getNoOfStocks())
+                        .pricePerStock(offer.getPricePerStock())
+                        .offerType(offer.getOfferType())
+                        .offerStatus(offer.getOfferStatus())
+                        .build())
+                .toList();
     }
 
     public Offer getOfferById(Integer id) {
@@ -60,6 +74,23 @@ public class OfferService {
             offer.setOfferStatus(OfferStatus.CANCELLED);
             offerRepository.save(offer);
         }
+    }
+
+    public List<OfferResponse> getOffersByClientId(Integer clientId) {
+        List<Offer> offers = offerRepository.findByClientId(clientId);
+
+        // Map each Offer entity to OfferResponse
+        return offers.stream()
+                .map(offer -> OfferResponse.builder()
+                        .id(offer.getId())
+                        .clientId(offer.getClient().getId()) // Add clientId
+                        .stockType(offer.getStockType())
+                        .noOfStocks(offer.getNoOfStocks())
+                        .pricePerStock(offer.getPricePerStock())
+                        .offerType(offer.getOfferType())
+                        .offerStatus(offer.getOfferStatus())
+                        .build())
+                .toList();
     }
 
     public int validateOffer(Offer offer) {

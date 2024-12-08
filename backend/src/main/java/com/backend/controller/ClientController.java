@@ -1,7 +1,10 @@
 package com.backend.controller;
 
 import com.backend.dto.LoginRequest;
+import com.backend.dto.LoginResponse;
+import com.backend.dto.MoneyWalletResponse;
 import com.backend.dto.RegisterClientRequest;
+import com.backend.dto.UpdateMoneyWalletRequest;
 import com.backend.entity.Client;
 import com.backend.service.ClientService;
 import jakarta.validation.Valid;
@@ -70,11 +73,52 @@ public class ClientController {
         }
     }
 
+    @GetMapping("/{id}/money-wallet")
+    public ResponseEntity<MoneyWalletResponse> getMoneyWallet(@PathVariable Integer id) {
+        // Fetch the client
+        Client client = clientService.getClientById(id);
+        if (client != null) {
+            // Map the moneyWallet to the response DTO
+            MoneyWalletResponse response = MoneyWalletResponse.builder()
+                    .moneyWallet(client.getMoneyWallet())
+                    .build();
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/money-wallet")
+    public ResponseEntity<Client> updateMoneyWallet(
+            @PathVariable Integer id,
+            @Valid @RequestBody UpdateMoneyWalletRequest request) {
+
+        // Fetch the existing client
+        Client existingClient = clientService.getClientById(id);
+        if (existingClient != null) {
+            // Update the moneyWallet field
+            existingClient.setMoneyWallet(request.getMoneyWallet());
+
+            // Save the updated client
+            Client updatedClient = clientService.saveClient(existingClient);
+            return ResponseEntity.ok(updatedClient);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         Client client = clientService.getClientByEmail(loginRequest.getEmail());
         if (client != null && client.getPassword().equals(loginRequest.getPassword())) {
-            return ResponseEntity.ok("Login successful");
+            // Create a response containing the user details
+            LoginResponse loginResponse = LoginResponse.builder()
+                    .id(client.getId())
+                    .email(client.getEmail())
+                    .password(client.getPassword())
+                    .build();
+
+            return ResponseEntity.ok(loginResponse);
         } else {
             return ResponseEntity.status(401).body("Invalid email or password");
         }
