@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
-const Login = ({ onLogin }) => {
+const Login = () => {
     const [form, setForm] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const { login } = useAuth(); // Access login function from AuthContext
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -29,14 +31,12 @@ const Login = ({ onLogin }) => {
                 password: form.password,
             });
 
-            const { data } = response;
+            const userData = response.data; // Assuming response contains id, email, and password
+            login(userData); // Save user data in AuthContext
 
-            // Successful login
-            onLogin(); // Update login state in the app
             navigate('/home'); // Redirect to Home page
         } catch (err) {
             setError(err.response?.data?.message || 'Invalid email or password');
-            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -64,7 +64,7 @@ const Login = ({ onLogin }) => {
             <button type="submit" disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}
             </button>
-            {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             <p>
                 Don't have an account? <Link to="/register">Register</Link>
             </p>

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // Import AuthContext
 import '../styles/Navbar.css';
 
-const Navbar = ({ onLogout }) => {
+const Navbar = () => {
+    const { logout } = useAuth(); // Access logout function from AuthContext
+
     return (
         <nav>
             <ul>
@@ -11,7 +14,7 @@ const Navbar = ({ onLogout }) => {
                 <li><Link to="/transactions">Transactions</Link></li>
                 <li><Link to="/profile">Profile</Link></li>
                 <li>
-                    <button onClick={onLogout} style={{ marginLeft: '1rem' }}>
+                    <button onClick={logout} style={{ marginLeft: '1rem' }}>
                         Logout
                     </button>
                 </li>
