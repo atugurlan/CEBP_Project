@@ -29,8 +29,8 @@ public class StockWalletService {
         return stockWalletRepository.findById(id).orElse(null);
     }
 
-    public StockWallet getStockWalletsByStockType(StockType stockType) {
-        return stockWalletRepository.findOneByStockType(stockType);
+    public List<StockWallet> getStockWalletsByStockType(StockType stockType) {
+        return stockWalletRepository.findAllByStockType(stockType);
     }
 
     public List<StockWallet> getStockWalletByClientId(Integer clientId) {
@@ -49,7 +49,7 @@ public class StockWalletService {
     @Transactional
     public void updateStockWallet(Integer clientId, StockType stockType, Integer quantityChange) {
 
-        StockWallet findStockWallet = stockWalletRepository.findOneByStockType(stockType);
+        StockWallet findStockWallet = stockWalletRepository.findOneByClientIdAndStockType(clientId, stockType);
         Client client = clientRepository.findOneById(clientId);
 
         if (findStockWallet != null) {

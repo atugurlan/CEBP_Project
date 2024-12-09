@@ -52,14 +52,45 @@ public class OfferService {
     }
 
     @Transactional
-    public Offer saveOffer(Offer offer) {
-        System.out.println();
-        validateOffer(offer); // Check client's resources before saving
-
-        if (offer.getOfferStatus() == null) {
-            offer.setOfferStatus(OfferStatus.PENDING); // Default to PENDING if not set
+    public Offer saveOffer(Offer offer, Client client) {
+        // Validate the offer to ensure the client has the required resources
+        int validationCode = validateOffer(offer);
+        if (validationCode == 1) {
+            throw new IllegalArgumentException("Client does not have enough stocks to sell.");
+        } else if (validationCode == 2) {
+            throw new IllegalArgumentException("Client does not have enough money to buy.");
         }
 
+        // Set default status to PENDING if not provided
+        if (offer.getOfferStatus() == null) {
+            offer.setOfferStatus(OfferStatus.PENDING);
+        }
+
+        // Deduct resources based on the type of offer
+        if (offer.getOfferStatus() == OfferStatus.PENDING) {
+            if (offer.getOfferType() == OfferType.SELL) {
+                // Deduct stocks from the client's stock wallet
+                StockWallet stockWallet = stockWalletService.getStockWalletByClientIdAndStockType(
+                        client.getId(),
+                        offer.getStockType()
+                );
+                if (stockWallet == null || stockWallet.getQuantity() < offer.getNoOfStocks()) {
+                    throw new IllegalArgumentException("Insufficient stocks in the client's stock wallet.");
+                }
+                stockWallet.setQuantity(stockWallet.getQuantity() - offer.getNoOfStocks());
+                stockWalletService.saveStockWallet(stockWallet);
+            } else if (offer.getOfferType() == OfferType.BUY) {
+                // Deduct money from the client's money wallet
+                int totalCost = offer.getNoOfStocks() * offer.getPricePerStock();
+                if (client.getMoneyWallet() < totalCost) {
+                    throw new IllegalArgumentException("Insufficient funds in the client's money wallet.");
+                }
+                client.setMoneyWallet(client.getMoneyWallet() - totalCost);
+                clientService.saveClient(client);
+            }
+        }
+
+        // Save the offer
         Offer savedOffer = offerRepository.save(offer);
 
         // Trigger matcher system after saving the new offer
@@ -68,9 +99,37 @@ public class OfferService {
         return savedOffer;
     }
 
+    @Transactional
     public void cancelOffer(Integer id) {
         Offer offer = getOfferById(id);
-        if (offer != null) {
+        if (offer != null && offer.getOfferStatus() == OfferStatus.PENDING) {
+            Client client = offer.getClient();
+
+            if (offer.getOfferType() == OfferType.SELL) {
+                // Restore stocks to the client's stock wallet
+                StockWallet stockWallet = stockWalletService.getStockWalletByClientIdAndStockType(
+                        client.getId(),
+                        offer.getStockType()
+                );
+                if (stockWallet == null) {
+                    // Create a new stock wallet if none exists
+                    stockWallet = StockWallet.builder()
+                            .client(client)
+                            .stockType(offer.getStockType())
+                            .quantity(offer.getNoOfStocks())
+                            .build();
+                } else {
+                    stockWallet.setQuantity(stockWallet.getQuantity() + offer.getNoOfStocks());
+                }
+                stockWalletService.saveStockWallet(stockWallet);
+            } else if (offer.getOfferType() == OfferType.BUY) {
+                // Restore money to the client's money wallet
+                int totalCost = offer.getNoOfStocks() * offer.getPricePerStock();
+                client.setMoneyWallet(client.getMoneyWallet() + totalCost);
+                clientService.saveClient(client);
+            }
+
+            // Mark the offer as CANCELLED
             offer.setOfferStatus(OfferStatus.CANCELLED);
             offerRepository.save(offer);
         }
@@ -96,9 +155,9 @@ public class OfferService {
     public int validateOffer(Offer offer) {
         Client client = clientRepository.findOneById(offer.getClient().getId());
         System.out.println(client);
-        StockWallet stockWallet = stockWalletService.getStockWalletByClientIdAndStockType(offer.getClient().getId(), offer.getStockType());
 
         if (offer.getOfferType() == OfferType.SELL) {
+            StockWallet stockWallet = stockWalletService.getStockWalletByClientIdAndStockType(offer.getClient().getId(), offer.getStockType());
             // Ensure client has enough stocks to sell
             if (stockWallet == null || stockWallet.getStockType() != offer.getStockType()
                     || stockWallet.getQuantity() < offer.getNoOfStocks()) {
@@ -157,7 +216,7 @@ public class OfferService {
         }
     }
 
-    // Perform a transaction and update client resources
+    // Perform a transaction without updating client resources
     private void performTransaction(Offer newOffer, Offer match, int tradedStocks) {
         Transaction transaction = Transaction.builder()
                 .sellingClient(newOffer.getOfferType() == OfferType.SELL ? newOffer.getClient() : match.getClient())
@@ -170,18 +229,8 @@ public class OfferService {
                 .totalPrice(tradedStocks * newOffer.getPricePerStock())
                 .build();
 
+        // Save the transaction to the database
         transactionRepository.save(transaction);
-
-        // Update money wallets
-        Client sellingClient = clientRepository.findOneById(transaction.getSellingClient().getId());
-        Client buyingClient = clientRepository.findOneById(transaction.getBuyingClient().getId());
-        int totalPrice = transaction.getTotalPrice();
-
-        clientService.updateMoneyWallet(sellingClient.getId(), sellingClient.getMoneyWallet() + totalPrice);
-        clientService.updateMoneyWallet(buyingClient.getId(), buyingClient.getMoneyWallet() - totalPrice);
-
-        // Update stock wallets
-        stockWalletService.updateStockWallet(sellingClient.getId(), transaction.getTradedStockType(), -tradedStocks);
-        stockWalletService.updateStockWallet(buyingClient.getId(), transaction.getTradedStockType(), tradedStocks);
     }
+
 }
