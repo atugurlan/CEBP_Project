@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const Home = () => {
     const { user } = useAuth(); // Access the logged-in user
     const [stockWallet, setStockWallet] = useState([]); // To fetch available stocks
+    const [allStockTypes, setAllStockTypes] = useState([]); // To fetch all stock types
     const [moneyWallet, setMoneyWallet] = useState(0); // To fetch the money wallet
     const [offerDetails, setOfferDetails] = useState({
         stockType: '',
@@ -25,8 +26,12 @@ const Home = () => {
 
                 const moneyResponse = await axios.get(`http://localhost:8080/clients/${user.id}/money-wallet`);
                 setMoneyWallet(moneyResponse.data.moneyWallet);
+
+                // Fetch all stock types from backend
+                const stockTypesResponse = await axios.get('http://localhost:8080/stock-types');
+                setAllStockTypes(stockTypesResponse.data);
             } catch (err) {
-                setError('Failed to fetch wallet details');
+                setError('Failed to fetch wallet or stock type details');
             }
         };
 
@@ -40,15 +45,17 @@ const Home = () => {
         setError(null);
 
         // Validate noOfStocks and pricePerStock
-        const selectedStock = stockWallet.find((stock) => stock.stockType === offerDetails.stockType);
-        if (!selectedStock) {
-            setError('Invalid stock type selected.');
-            return;
-        }
+        if (offerDetails.offerType === 'SELL') {
+            const selectedStock = stockWallet.find((stock) => stock.stockType === offerDetails.stockType);
+            if (!selectedStock) {
+                setError('Invalid stock type selected.');
+                return;
+            }
 
-        if (parseInt(offerDetails.noOfStocks, 10) > selectedStock.quantity) {
-            setError('The number of stocks exceeds the available quantity.');
-            return;
+            if (parseInt(offerDetails.noOfStocks, 10) > selectedStock.quantity) {
+                setError('The number of stocks exceeds the available quantity.');
+                return;
+            }
         }
 
         const maxPrice = moneyWallet / parseInt(offerDetails.noOfStocks, 10);
@@ -101,6 +108,23 @@ const Home = () => {
                 <form onSubmit={handleSubmit}>
                     <h3>Add a New Offer</h3>
 
+                    <label htmlFor="offerType">Offer Type:</label>
+                    <select
+                        id="offerType"
+                        value={offerDetails.offerType}
+                        onChange={(e) =>
+                            setOfferDetails({
+                                ...offerDetails,
+                                offerType: e.target.value,
+                                stockType: '', // Reset stock type when changing offer type
+                            })
+                        }
+                        required
+                    >
+                        <option value="SELL">SELL</option>
+                        <option value="BUY">BUY</option>
+                    </select>
+
                     <label htmlFor="stockType">Stock Type:</label>
                     <select
                         id="stockType"
@@ -109,11 +133,17 @@ const Home = () => {
                         required
                     >
                         <option value="">Select a stock type</option>
-                        {stockWallet.map((stock, index) => (
-                            <option key={index} value={stock.stockType}>
-                                {stock.stockType} (Available: {stock.quantity})
-                            </option>
-                        ))}
+                        {offerDetails.offerType === 'SELL'
+                            ? stockWallet.map((stock, index) => (
+                                  <option key={index} value={stock.stockType}>
+                                      {stock.stockType} (Available: {stock.quantity})
+                                  </option>
+                              ))
+                            : allStockTypes.map((type, index) => (
+                                  <option key={index} value={type}>
+                                      {type}
+                                  </option>
+                              ))}
                     </select>
 
                     <label htmlFor="noOfStocks">Number of Stocks:</label>
@@ -134,17 +164,6 @@ const Home = () => {
                         onChange={(e) => setOfferDetails({ ...offerDetails, pricePerStock: e.target.value })}
                         required
                     />
-
-                    <label htmlFor="offerType">Offer Type:</label>
-                    <select
-                        id="offerType"
-                        value={offerDetails.offerType}
-                        onChange={(e) => setOfferDetails({ ...offerDetails, offerType: e.target.value })}
-                        required
-                    >
-                        <option value="SELL">SELL</option>
-                        <option value="BUY">BUY</option>
-                    </select>
 
                     <button type="submit">Submit Offer</button>
                 </form>

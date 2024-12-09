@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const Profile = () => {
     const { user, logout } = useAuth(); // Access the logged-in user and logout function
     const [stockWallet, setStockWallet] = useState([]); // Initialize as an empty array
+    const [allStockTypes, setAllStockTypes] = useState([]); // To fetch all available stock types
     const [moneyWallet, setMoneyWallet] = useState(''); // To update money wallet
     const [currentMoneyWallet, setCurrentMoneyWallet] = useState(null); // To view money wallet
     const [newStock, setNewStock] = useState({ stockType: '', quantity: '' });
     const [error, setError] = useState(null);
     const [message, setMessage] = useState(null);
+
+    // Fetch stock types on component mount
+    useEffect(() => {
+        const fetchAllStockTypes = async () => {
+            try {
+                const response = await axios.get('http://localhost:8080/stock-types');
+                setAllStockTypes(response.data);
+            } catch (err) {
+                setError('Failed to fetch stock types.');
+            }
+        };
+
+        fetchAllStockTypes();
+    }, []);
 
     const handleViewStockWallet = async () => {
         setError(null);
@@ -121,9 +136,11 @@ const Profile = () => {
                     onChange={(e) => setNewStock({ ...newStock, stockType: e.target.value })}
                 >
                     <option value="">Select Stock Type</option>
-                    <option value="AMAZON">Amazon</option>
-                    <option value="APPLE">Apple</option>
-                    <option value="GOOGLE">Google</option>
+                    {allStockTypes.map((type, index) => (
+                        <option key={index} value={type}>
+                            {type}
+                        </option>
+                    ))}
                 </select>
                 <input
                     type="number"
