@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import Login from './components/Login';
-import Register from './components/Register';
-import Navbar from './components/Navbar';
-import Home from './components/Home';
-import Offers from './components/Offers';
-import Transactions from './components/Transactions';
-import Profile from './components/Profile';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Navbar from './pages/Navbar';
+import Home from './pages/Home';
+import Offers from './pages/Offers';
+import Transactions from './pages/Transactions';
+import Profile from './pages/Profile';
 import { useAuth } from './context/AuthContext';
 
 function App() {
