@@ -57,36 +57,51 @@ public class StockWalletController {
     }
 
     @PostMapping
-    public ResponseEntity<StockWallet> createStockWallet(@Valid @RequestBody CreateStockWalletRequest stockWalletRequest) {
+    public ResponseEntity<StockWallet> createOrUpdateStockWallet(@Valid @RequestBody CreateStockWalletRequest stockWalletRequest) {
         // Fetch the client entity by ID
         Client client = clientService.getClientById(stockWalletRequest.getClient());
         if (client == null) {
             return ResponseEntity.status(404).body(null); // Client not found
         }
 
-        // Map the DTO to the StockWallet entity
-        StockWallet stockWallet = StockWallet.builder()
-                .client(client) // Use the managed Client entity
-                .stockType(stockWalletRequest.getStockType())
-                .quantity(stockWalletRequest.getQuantity())
-                .build();
+        // Check if a StockWallet with the same stockType already exists for the client
+        StockWallet existingStockWallet = stockWalletService.getStockWalletByClientIdAndStockType(
+                client.getId(),
+                stockWalletRequest.getStockType()
+        );
 
-        // Save the StockWallet entity
-        StockWallet savedStockWallet = stockWalletService.saveStockWallet(stockWallet);
-        return ResponseEntity.ok(savedStockWallet);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<StockWallet> updateStockWallet(@PathVariable Integer id, @RequestBody StockWallet stockWallet) {
-        StockWallet existingStockWallet = stockWalletService.getStockWalletById(id);
         if (existingStockWallet != null) {
-            stockWallet.setId(id); // Ensure the ID is preserved
-            StockWallet updatedStockWallet = stockWalletService.saveStockWallet(stockWallet);
+            // Update the existing StockWallet with the new quantity
+            existingStockWallet.setQuantity(existingStockWallet.getQuantity() + stockWalletRequest.getQuantity());
+
+            // Save the updated StockWallet
+            StockWallet updatedStockWallet = stockWalletService.saveStockWallet(existingStockWallet);
             return ResponseEntity.ok(updatedStockWallet);
         } else {
-            return ResponseEntity.notFound().build();
+            // If no existing StockWallet is found, create a new one
+            StockWallet stockWallet = StockWallet.builder()
+                    .client(client) // Use the managed Client entity
+                    .stockType(stockWalletRequest.getStockType())
+                    .quantity(stockWalletRequest.getQuantity())
+                    .build();
+
+            // Save the new StockWallet entity
+            StockWallet savedStockWallet = stockWalletService.saveStockWallet(stockWallet);
+            return ResponseEntity.ok(savedStockWallet);
         }
     }
+
+//    @PutMapping("/{id}")
+//    public ResponseEntity<StockWallet> updateStockWallet(@PathVariable Integer id, @RequestBody StockWallet stockWallet) {
+//        StockWallet existingStockWallet = stockWalletService.getStockWalletById(id);
+//        if (existingStockWallet != null) {
+//            stockWallet.setId(id); // Ensure the ID is preserved
+//            StockWallet updatedStockWallet = stockWalletService.saveStockWallet(stockWallet);
+//            return ResponseEntity.ok(updatedStockWallet);
+//        } else {
+//            return ResponseEntity.notFound().build();
+//        }
+//    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStockWallet(@PathVariable Integer id) {
