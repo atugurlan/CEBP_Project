@@ -81,6 +81,12 @@ const Profile = () => {
       return;
     }
 
+    if (newStock.quantity < 0) {
+      setError("Number of stocks cannot be negative.");
+      setMessage("");
+      return;
+    }
+
     try {
       await axios.post("http://localhost:8080/stock-wallets", {
         client: user.id,
@@ -100,6 +106,12 @@ const Profile = () => {
 
     if (!moneyWallet) {
       setError("Please enter a new money wallet amount.");
+      return;
+    }
+
+    if (moneyWallet < 0) {
+      setError("Balance can't be negative.");
+      setMessage("");
       return;
     }
 

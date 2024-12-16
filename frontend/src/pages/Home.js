@@ -27,8 +27,8 @@ import {
 
 const OfferFormSchema = z.object({
   stockType: z.string().nonempty({ message: "Stock type is required." }),
-  noOfStocks: z.number().min(1, { message: "At least 1 stock is required." }),
-  pricePerStock: z.number().positive({ message: "Price must be greater than 0." }),
+  noOfStocks: z.string().nonempty({ message: "At least 1 stock is required." }),
+  pricePerStock: z.string().nonempty({ message: "Price must be greater than 0." }),
   offerType: z.enum(["SELL", "BUY"]),
 });
 
